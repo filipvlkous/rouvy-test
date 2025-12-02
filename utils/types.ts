@@ -3,7 +3,7 @@ export type ActivityType = 'ride' | 'run';
 export interface Activity {
   id: string;
   user_id: string;
-  name: string;
+  title: string;
   type: ActivityType;
   file_url: string | null;
   file_name: string | null;

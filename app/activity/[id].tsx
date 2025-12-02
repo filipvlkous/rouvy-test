@@ -12,6 +12,9 @@ import { useActivityStore } from '../../store/activityStore';
 import { getActivityData } from 'api/supabase';
 import { ChartType, DataPoint } from 'utils/types';
 import { LineChart } from 'react-native-gifted-charts';
+import Chip from 'components/chip';
+import Stat from 'components/activity/stat';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +22,7 @@ export default function ActivityDetail() {
   const [chartType, setChartType] = useState<ChartType>('speed');
   const [selectedValue, setSelectedValue] = useState<number | null>(null);
 
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const { getActivityById } = useActivityStore();
   const activity = getActivityById(id as string);
@@ -54,16 +58,6 @@ export default function ActivityDetail() {
       </View>
     );
   }
-
-  const formatDistance = (meters: number) => {
-    return (meters / 1000).toFixed(2) + ' km';
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  };
 
   const getChartData = () => {
     if (!activityData || activityData.length === 0) {
@@ -118,67 +112,55 @@ export default function ActivityDetail() {
   const chartColor = getChartColor();
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="px-6 pb-6 pt-12">
-        <TouchableOpacity className="mb-4" onPress={() => router.back()}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      className="flex-1 bg-white">
+      <View className=" px-6 pb-6 ">
+        <TouchableOpacity className="border-1 mb-4" onPress={() => router.back()}>
           <Text className="text-base text-blue-600">← Back</Text>
         </TouchableOpacity>
 
-        <Text className="mb-2 text-3xl font-bold">{activity.name}</Text>
-        <View className="mb-6 self-start rounded-full bg-blue-100 px-3 py-1">
-          <Text className="text-xs font-medium uppercase text-blue-700">{activity.type}</Text>
+        <View className="mb-2 flex-row items-start justify-between">
+          <Text className="flex-1 text-3xl font-semibold text-gray-900">{activity.title}</Text>
+          <Chip type={activity.type} />
         </View>
 
         <View className="mb-8 flex-row justify-between">
-          <View className="flex-1">
-            <Text className="mb-1 text-sm text-gray-500">Distance</Text>
-            <Text className="text-2xl font-bold text-gray-900">
-              {formatDistance(activity.distance)}
-            </Text>
-          </View>
-          <View className="flex-1">
-            <Text className="mb-1 text-sm text-gray-500">Duration</Text>
-            <Text className="text-2xl font-bold text-gray-900">
-              {formatDuration(activity.duration)}
-            </Text>
-          </View>
-          <View className="flex-1">
-            <Text className="mb-1 text-sm text-gray-500">Elevation</Text>
-            <Text className="text-2xl font-bold text-gray-900">
-              {Math.round(activity.elevation_gain)}m
-            </Text>
-          </View>
+          <Stat text={'Distance'} value={activity.distance} />
+          <Stat text={'Duration'} value={activity.duration} />
+          <Stat text={'Elevation'} value={activity.elevation_gain} />
         </View>
 
         <View className="mb-4">
           <Text className="mb-3 text-lg font-semibold">Activity Data</Text>
-          {isLoading ? (
-            <View className="flex-1 items-center justify-center bg-white">
-              <ActivityIndicator size="large" color="#2563eb" />
-              <Text className="mt-4 text-gray-500">Loading activity data...</Text>
-            </View>
-          ) : (
-            <>
-              <View className="mb-4 flex-row justify-between">
-                {chartButtons.map((button) => (
-                  <TouchableOpacity
-                    key={button.type}
-                    className={`mx-1 flex-1 rounded-lg border py-2 ${
-                      chartType === button.type
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-gray-300 bg-white'
-                    }`}
-                    onPress={() => onChartTypeChange(button.type)}>
-                    <Text
-                      className={`text-center text-sm font-medium ${
-                        chartType === button.type ? 'text-white' : 'text-gray-700'
-                      }`}>
-                      {button.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
 
+          <>
+            <View className="mb-4 flex-row justify-between">
+              {chartButtons.map((button) => (
+                <TouchableOpacity
+                  key={button.type}
+                  className={`mx-1 flex-1 rounded-lg border py-2 ${
+                    chartType === button.type
+                      ? 'border-blue-600 bg-blue-600'
+                      : 'border-gray-300 bg-white'
+                  }`}
+                  onPress={() => onChartTypeChange(button.type)}>
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      chartType === button.type ? 'text-white' : 'text-gray-700'
+                    }`}>
+                    {button.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {isLoading ? (
+              <View className="h-[200px] flex-1 items-center justify-center bg-white">
+                <ActivityIndicator size="large" color="#2563eb" />
+                <Text className="mt-4 text-gray-500">Loading activity data...</Text>
+              </View>
+            ) : (
               <View className="rounded-lg bg-gray-50 p-4">
                 <View className="mb-4 flex-row items-center justify-center">
                   <Text className="text-center font-medium text-gray-700">{getChartLabel()}</Text>
@@ -235,8 +217,8 @@ export default function ActivityDetail() {
                   }}
                 />
               </View>
-            </>
-          )}
+            )}
+          </>
         </View>
 
         <View className="mt-4 rounded-lg bg-gray-50 p-4">

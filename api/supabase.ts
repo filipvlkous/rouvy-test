@@ -40,12 +40,21 @@ export async function postActions({
   return { data, error };
 }
 
-export async function getAllActions({ user_id }: { user_id: string }) {
+export async function getAllActions({
+  user_id,
+  limit = 10,
+  offset = 0
+}: {
+  user_id: string;
+  limit?: number;
+  offset?: number;
+}) {
   const { data, error } = await supabase
     .from('activities')
     .select('*')
     .eq('user_id', user_id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   return { data, error };
 }
 

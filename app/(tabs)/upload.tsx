@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useActivityStore } from '../../store/activityStore';
 import { useRouter } from 'expo-router';
+import { Toast } from 'toastify-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Upload() {
   const [name, setName] = useState('');
@@ -9,6 +11,7 @@ export default function Upload() {
   const [loading, setLoading] = useState(false);
   const { uploadActivity } = useActivityStore();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleUpload = async () => {
     if (!name) {
@@ -19,7 +22,19 @@ export default function Upload() {
     setLoading(true);
     try {
       await uploadActivity(name, type);
-      Alert.alert('Success', 'Activity uploaded successfully!');
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Successfully uploaded activity',
+        visibilityTime: 1500,
+        backgroundColor: '#0c9500',
+        textColor: '#fff',
+        autoHide: true,
+        icon: false,
+        closeIcon: 'close',
+        closeIconFamily: 'MaterialIcons',
+        closeIconSize: 18,
+      });
       setName('');
       router.push('/(tabs)');
     } catch (error: any) {
@@ -30,65 +45,62 @@ export default function Upload() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-12">
-      <Text className="text-3xl font-bold mb-8">Upload Activity</Text>
+    <View
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      className="flex-1 bg-white px-6 pt-12">
+      <Text className="mb-8 text-3xl font-bold">Upload Activity</Text>
 
-      <Text className="text-gray-700 mb-2 font-medium">Activity Name</Text>
+      <Text className="mb-2 font-medium text-gray-700">Activity Name</Text>
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
+        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Morning Ride"
         value={name}
         onChangeText={setName}
       />
 
-      <Text className="text-gray-700 mb-3 font-medium">Activity Type</Text>
-      <View className="flex-row mb-8">
+      <Text className="mb-3 font-medium text-gray-700">Activity Type</Text>
+      <View className="mb-8 flex-row">
         <TouchableOpacity
-          className={`flex-1 py-3 rounded-lg mr-2 border-2 ${
-            type === 'ride' ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
+          className={`mr-2 flex-1 rounded-lg border-2 py-3 ${
+            type === 'ride' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
           }`}
-          onPress={() => setType('ride')}
-        >
+          onPress={() => setType('ride')}>
           <Text
             className={`text-center font-semibold ${
               type === 'ride' ? 'text-white' : 'text-gray-700'
-            }`}
-          >
+            }`}>
             Ride
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className={`flex-1 py-3 rounded-lg ml-2 border-2 ${
-            type === 'run' ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
+          className={`ml-2 flex-1 rounded-lg border-2 py-3 ${
+            type === 'run' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
           }`}
-          onPress={() => setType('run')}
-        >
+          onPress={() => setType('run')}>
           <Text
             className={`text-center font-semibold ${
               type === 'run' ? 'text-white' : 'text-gray-700'
-            }`}
-          >
+            }`}>
             Run
           </Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity
-        className="bg-blue-600 rounded-lg py-4 mb-4"
+        className="mb-4 rounded-lg bg-blue-600 py-4"
         onPress={handleUpload}
-        disabled={loading}
-      >
+        disabled={loading}>
         {loading ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text className="text-white text-center font-semibold text-base">
+          <Text className="text-center text-base font-semibold text-white">
             Choose File & Upload
           </Text>
         )}
       </TouchableOpacity>
 
-      <Text className="text-gray-500 text-sm text-center mt-4">
+      <Text className="mt-4 text-center text-sm text-gray-500">
         Supported formats: GPX, FIT, TCX
       </Text>
     </View>

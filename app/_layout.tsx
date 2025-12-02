@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import ToastManager from 'toastify-react-native';
 
 import '../global.css';
+import { View } from 'react-native';
 
 export default function RootLayout() {
   const { user, loading, initialize } = useAuthStore();
@@ -31,10 +32,13 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="activity/[id]" options={{ headerShown: false }} />
-    </Stack>
+    <View className="flex-1 bg-white">
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="activity/[id]" options={{ headerShown: false }} />
+      </Stack>
+      <ToastManager showProgressBar={false} />
+    </View>
   );
 }

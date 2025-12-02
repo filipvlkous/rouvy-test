@@ -5,11 +5,17 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { getAllActions, postActions } from 'api/supabase';
 import { parseGPX } from 'utils/parseGPX';
+import { Toast } from 'toastify-react-native';
 
 interface ActivityState {
   activities: Activity[];
   loading: boolean;
-  fetchActivities: () => Promise<void>;
+  loadingMore: boolean;
+  hasMore: boolean;
+  page: number;
+  pageSize: number;
+  fetchActivities: (refresh?: boolean) => Promise<void>;
+  loadMore: () => Promise<void>;
   uploadActivity: (name: string, type: 'ride' | 'run') => Promise<void>;
   getActivityById: (id: string) => Activity | undefined;
 }
@@ -17,9 +23,19 @@ interface ActivityState {
 export const useActivityStore = create<ActivityState>((set, get) => ({
   activities: [],
   loading: false,
+  loadingMore: false,
+  hasMore: true,
+  page: 0,
+  pageSize: 10,
+  fetchActivities: async (refresh = false) => {
+    const currentState = get();
 
-  fetchActivities: async () => {
-    set({ loading: true });
+    if (refresh) {
+      set({ loading: true, page: 0, activities: [], hasMore: true });
+    } else {
+      set({ loading: true });
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -28,12 +44,57 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
       return;
     }
 
-    const { data, error } = await getAllActions({ user_id: user.id });
+    const { data, error } = await getAllActions({
+      user_id: user.id,
+      limit: currentState.pageSize,
+      offset: 0
+    });
 
     if (!error && data) {
-      set({ activities: data as Activity[], loading: false });
+      set({
+        activities: data as Activity[],
+        loading: false,
+        page: 0,
+        hasMore: data.length === currentState.pageSize
+      });
     } else {
       set({ loading: false });
+    }
+  },
+
+  loadMore: async () => {
+    const currentState = get();
+
+    if (currentState.loadingMore || !currentState.hasMore) return;
+
+    set({ loadingMore: true });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      set({ loadingMore: false });
+      return;
+    }
+
+    const nextPage = currentState.page + 1;
+    const offset = nextPage * currentState.pageSize;
+
+    const { data, error } = await getAllActions({
+      user_id: user.id,
+      limit: currentState.pageSize,
+      offset
+    });
+
+    if (!error && data) {
+      set({
+        activities: [...currentState.activities, ...(data as Activity[])],
+        loadingMore: false,
+        page: nextPage,
+        hasMore: data.length === currentState.pageSize
+      });
+    } else {
+      set({ loadingMore: false });
     }
   },
 
@@ -86,6 +147,8 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
       .from('activity_data')
       .insert(dataPointsWithActivityId)
       .select();
+
+    await get().fetchActivities();
   },
 
   getActivityById: (id: string) => {
