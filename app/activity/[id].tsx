@@ -1,17 +1,51 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Dimensions,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useActivityStore } from '../../store/activityStore';
+import { getActivityData } from 'api/supabase';
+import { ChartType, DataPoint } from 'utils/types';
 import { LineChart } from 'react-native-gifted-charts';
 
-type ChartType = 'speed' | 'heart_rate' | 'elevation' | 'power';
-
 export default function ActivityDetail() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [activityData, setActivityData] = useState<DataPoint[]>([]);
+  const [chartType, setChartType] = useState<ChartType>('speed');
+  const [selectedValue, setSelectedValue] = useState<number | null>(null);
+
   const { id } = useLocalSearchParams();
   const { getActivityById } = useActivityStore();
   const activity = getActivityById(id as string);
+  if (!activity) return;
   const router = useRouter();
-  const [chartType, setChartType] = useState<ChartType>('speed');
+
+  const onChartTypeChange = (chartType: ChartType) => {
+    setSelectedValue(null);
+    setChartType(chartType);
+  };
+
+  const getActivityDataId = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await getActivityData({ activity_id: activity?.id });
+      if (!error && data) {
+        setActivityData(data);
+      }
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getActivityDataId();
+  }, [id]);
 
   if (!activity) {
     return (
@@ -32,16 +66,14 @@ export default function ActivityDetail() {
   };
 
   const getChartData = () => {
-    if (!activity.activity_data || activity.activity_data.length === 0) {
+    if (!activityData || activityData.length === 0) {
       return [{ value: 0 }];
     }
 
-    // Sample data if too many points (for performance)
-    const data = activity.activity_data;
     const maxPoints = 100;
-    const step = Math.max(1, Math.floor(data.length / maxPoints));
+    const step = Math.max(1, Math.floor(activityData.length / maxPoints));
 
-    return data
+    return activityData
       .filter((_, index) => index % step === 0)
       .map((point) => ({
         value: Number(point[chartType]) || 0,
@@ -120,56 +152,91 @@ export default function ActivityDetail() {
 
         <View className="mb-4">
           <Text className="mb-3 text-lg font-semibold">Activity Data</Text>
-          <View className="mb-4 flex-row justify-between">
-            {chartButtons.map((button) => (
-              <TouchableOpacity
-                key={button.type}
-                className={`mx-1 flex-1 rounded-lg border py-2 ${
-                  chartType === button.type
-                    ? 'border-blue-600 bg-blue-600'
-                    : 'border-gray-300 bg-white'
-                }`}
-                onPress={() => setChartType(button.type)}>
-                <Text
-                  className={`text-center text-sm font-medium ${
-                    chartType === button.type ? 'text-white' : 'text-gray-700'
-                  }`}>
-                  {button.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {isLoading ? (
+            <View className="flex-1 items-center justify-center bg-white">
+              <ActivityIndicator size="large" color="#2563eb" />
+              <Text className="mt-4 text-gray-500">Loading activity data...</Text>
+            </View>
+          ) : (
+            <>
+              <View className="mb-4 flex-row justify-between">
+                {chartButtons.map((button) => (
+                  <TouchableOpacity
+                    key={button.type}
+                    className={`mx-1 flex-1 rounded-lg border py-2 ${
+                      chartType === button.type
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                    onPress={() => onChartTypeChange(button.type)}>
+                    <Text
+                      className={`text-center text-sm font-medium ${
+                        chartType === button.type ? 'text-white' : 'text-gray-700'
+                      }`}>
+                      {button.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-          <View className="rounded-lg bg-gray-50 p-4">
-            <Text className="mb-4 text-center font-medium text-gray-700">{getChartLabel()}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <LineChart
-                data={chartData}
-                width={screenWidth - 80}
-                height={200}
-                color={chartColor}
-                thickness={2}
-                hideDataPoints
-                curved
-                areaChart
-                startFillColor={chartColor}
-                endFillColor={chartColor}
-                startOpacity={0.3}
-                endOpacity={0.05}
-                initialSpacing={0}
-                endSpacing={0}
-                spacing={Math.max(2, (screenWidth - 100) / chartData.length)}
-                backgroundColor="transparent"
-                rulesColor="#e5e7eb"
-                rulesType="solid"
-                xAxisColor="#e5e7eb"
-                yAxisColor="#e5e7eb"
-                yAxisTextStyle={{ color: '#9ca3af', fontSize: 10 }}
-                hideYAxisText
-                noOfSections={4}
-              />
-            </ScrollView>
-          </View>
+              <View className="rounded-lg bg-gray-50 p-4">
+                <View className="mb-4 flex-row items-center justify-center">
+                  <Text className="text-center font-medium text-gray-700">{getChartLabel()}</Text>
+                  {selectedValue !== null && (
+                    <Text
+                      className="ml-2 rounded-md px-3  text-sm font-bold"
+                      style={{ color: chartColor }}>
+                      {selectedValue.toFixed(1)}
+                    </Text>
+                  )}
+                </View>
+                <LineChart
+                  isAnimated={false}
+                  data={chartData}
+                  width={screenWidth - 80}
+                  height={200}
+                  color={chartColor}
+                  thickness={2}
+                  hideDataPoints
+                  curved
+                  areaChart
+                  startFillColor={chartColor}
+                  endFillColor={chartColor}
+                  startOpacity={0.3}
+                  endOpacity={0.05}
+                  initialSpacing={0}
+                  endSpacing={0}
+                  spacing={Math.max(2, (screenWidth - 100) / chartData.length)}
+                  backgroundColor="transparent"
+                  rulesColor="#e5e7eb"
+                  rulesType="solid"
+                  xAxisColor="#e5e7eb"
+                  yAxisColor="#e5e7eb"
+                  yAxisTextStyle={{ color: '#9ca3af', fontSize: 10 }}
+                  hideYAxisText
+                  noOfSections={4}
+                  pointerConfig={{
+                    pointerStripHeight: 200,
+                    pointerStripColor: chartColor,
+                    pointerStripWidth: 2,
+                    pointerColor: chartColor,
+                    radius: 6,
+                    pointerLabelWidth: 100,
+                    pointerLabelHeight: 90,
+                    activatePointersOnLongPress: false,
+                    autoAdjustPointerLabelPosition: false,
+                    pointerLabelComponent: (items: any) => {
+                      const value = items[0]?.value;
+                      if (value !== undefined) {
+                        setTimeout(() => setSelectedValue(value), 0);
+                      }
+                      return null;
+                    },
+                  }}
+                />
+              </View>
+            </>
+          )}
         </View>
 
         <View className="mt-4 rounded-lg bg-gray-50 p-4">

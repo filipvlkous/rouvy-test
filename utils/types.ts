@@ -64,3 +64,5 @@ export interface ActivityWithStats extends Activity {
   stats?: ActivityStats;
   dataPointsCount?: number;
 }
+
+export type ChartType = 'speed' | 'heart_rate' | 'elevation' | 'power';
