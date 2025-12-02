@@ -15,6 +15,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import Chip from 'components/chip';
 import Stat from 'components/activity/stat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatDate } from 'components/activity/renderActivity';
 
 export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
@@ -117,12 +118,16 @@ export default function ActivityDetail() {
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
       className="flex-1 bg-white">
       <View className=" px-6 pb-6 ">
-        <TouchableOpacity className="border-1 mb-4" onPress={() => router.back()}>
-          <Text className="text-base text-blue-600">← Back</Text>
-        </TouchableOpacity>
+        <View className="mb-2 flex-row items-start justify-between">
+          <TouchableOpacity className="border-1 mb-4" onPress={() => router.back()}>
+            <Text className="text-base text-blue-600">← Back</Text>
+          </TouchableOpacity>
+          <Text className="mb-3 text-sm text-gray-500">{formatDate(activity.created_at)}</Text>
+        </View>
 
         <View className="mb-2 flex-row items-start justify-between">
           <Text className="flex-1 text-3xl font-semibold text-gray-900">{activity.title}</Text>
+
           <Chip type={activity.type} />
         </View>
 

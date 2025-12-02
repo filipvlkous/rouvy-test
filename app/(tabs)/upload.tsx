@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useActivityStore } from '../../store/activityStore';
 import { useRouter } from 'expo-router';
 import { Toast } from 'toastify-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Bike, Footprints, Upload as UploadIcon, FileText } from 'lucide-react-native';
 
 export default function Upload() {
   const [name, setName] = useState('');
@@ -46,63 +47,99 @@ export default function Upload() {
 
   return (
     <View
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
-      className="flex-1 bg-white px-6 pt-12">
-      <Text className="mb-8 text-3xl font-bold">Upload Activity</Text>
-
-      <Text className="mb-2 font-medium text-gray-700">Activity Name</Text>
-      <TextInput
-        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Morning Ride"
-        value={name}
-        onChangeText={setName}
-      />
-
-      <Text className="mb-3 font-medium text-gray-700">Activity Type</Text>
-      <View className="mb-8 flex-row">
-        <TouchableOpacity
-          className={`mr-2 flex-1 rounded-lg border-2 py-3 ${
-            type === 'ride' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
-          }`}
-          onPress={() => setType('ride')}>
-          <Text
-            className={`text-center font-semibold ${
-              type === 'ride' ? 'text-white' : 'text-gray-700'
-            }`}>
-            Ride
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className={`ml-2 flex-1 rounded-lg border-2 py-3 ${
-            type === 'run' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
-          }`}
-          onPress={() => setType('run')}>
-          <Text
-            className={`text-center font-semibold ${
-              type === 'run' ? 'text-white' : 'text-gray-700'
-            }`}>
-            Run
-          </Text>
-        </TouchableOpacity>
+      style={{ paddingTop: insets.top, paddingBottom: Platform.OS === 'ios' ? 0 : insets.bottom }}
+      className="flex-1 bg-gray-50">
+      <View className="px-6 pb-4">
+        <Text className="text-3xl font-bold">Upload Activity</Text>
       </View>
 
-      <TouchableOpacity
-        className="mb-4 rounded-lg bg-blue-600 py-4"
-        onPress={handleUpload}
-        disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text className="text-center text-base font-semibold text-white">
-            Choose File & Upload
-          </Text>
-        )}
-      </TouchableOpacity>
+      <View className="px-6">
+        {/* Activity Name */}
+        <View className="mb-3 rounded-lg border border-gray-200 bg-white p-4">
+          <Text className="mb-2 text-xs text-gray-500">Activity Name</Text>
+          <TextInput
+            className="text-base font-semibold text-gray-900"
+            placeholder="Morning Ride"
+            placeholderTextColor="#9ca3af"
+            value={name}
+            onChangeText={setName}
+          />
+        </View>
 
-      <Text className="mt-4 text-center text-sm text-gray-500">
-        Supported formats: GPX, FIT, TCX
-      </Text>
+        {/* Activity Type */}
+        <View className="mb-3">
+          <Text className="mb-3 text-xs text-gray-500">Activity Type</Text>
+          <View className="flex-row">
+            <TouchableOpacity
+              className={`mr-2 flex-1 rounded-lg border py-4 ${
+                type === 'ride'
+                  ? 'border-blue-600 bg-blue-600'
+                  : 'border-gray-200 bg-white'
+              }`}
+              onPress={() => setType('ride')}>
+              <View className="items-center">
+                <Bike
+                  size={24}
+                  color={type === 'ride' ? '#ffffff' : '#2563eb'}
+                />
+                <Text
+                  className={`mt-2 font-semibold ${
+                    type === 'ride' ? 'text-white' : 'text-gray-700'
+                  }`}>
+                  Ride
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className={`ml-2 flex-1 rounded-lg border py-4 ${
+                type === 'run'
+                  ? 'border-blue-600 bg-blue-600'
+                  : 'border-gray-200 bg-white'
+              }`}
+              onPress={() => setType('run')}>
+              <View className="items-center">
+                <Footprints
+                  size={24}
+                  color={type === 'run' ? '#ffffff' : '#2563eb'}
+                />
+                <Text
+                  className={`mt-2 font-semibold ${
+                    type === 'run' ? 'text-white' : 'text-gray-700'
+                  }`}>
+                  Run
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Upload Button */}
+        <TouchableOpacity
+          className="mb-3 flex-row items-center justify-center rounded-lg bg-blue-600 py-4"
+          onPress={handleUpload}
+          disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <UploadIcon size={18} color="white" />
+              <Text className="ml-2 text-center text-base font-semibold text-white">
+                Choose File & Upload
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        {/* Supported Formats Info */}
+        <View className="rounded-lg border border-gray-200 bg-white p-4">
+          <View className="flex-row items-center">
+            <FileText size={16} color="#6b7280" />
+            <Text className="ml-2 text-xs text-gray-500">Supported formats</Text>
+          </View>
+          <Text className="mt-1 text-sm font-semibold text-gray-700">GPX, FIT, TCX</Text>
+        </View>
+      </View>
     </View>
   );
 }

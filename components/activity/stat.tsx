@@ -6,17 +6,17 @@ type StatProps = {
   value: number;
 };
 
-const formatDistance = (value: number) => {
+export const formatDistance = (value: number) => {
   return (value / 1000).toFixed(2) + ' km';
 };
 
-const formatDuration = (value: number) => {
+export const formatDuration = (value: number) => {
   const hours = Math.floor(value / 3600);
   const minutes = Math.floor((value % 3600) / 60);
   return hours > 0 ? `${hours}h ${minutes} min` : `${minutes} min`;
 };
 
-const formatElevation = (value: number) => {
+export const formatElevation = (value: number) => {
   return Math.round(value) + ' m';
 };
 

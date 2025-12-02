@@ -43,7 +43,7 @@ export async function postActions({
 export async function getAllActions({
   user_id,
   limit = 10,
-  offset = 0
+  offset = 0,
 }: {
   user_id: string;
   limit?: number;
@@ -68,5 +68,12 @@ export async function getActivityData({
     .select('*')
     .eq('activity_id', activity_id);
 
+  return { data, error };
+}
+
+export async function getUserStatistics({ user_id }: { user_id: string }) {
+  const { data, error } = await supabase.rpc('get_user_activity_stats', {
+    p_user_id: user_id,
+  });
   return { data, error };
 }
