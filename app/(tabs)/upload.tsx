@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { useActivityStore } from '../../store/activityStore';
 import { useRouter } from 'expo-router';
 import { Toast } from 'toastify-react-native';
@@ -72,16 +80,11 @@ export default function Upload() {
           <View className="flex-row">
             <TouchableOpacity
               className={`mr-2 flex-1 rounded-lg border py-4 ${
-                type === 'ride'
-                  ? 'border-blue-600 bg-blue-600'
-                  : 'border-gray-200 bg-white'
+                type === 'ride' ? 'border-blue-600 bg-blue-600' : 'border-gray-200 bg-white'
               }`}
               onPress={() => setType('ride')}>
               <View className="items-center">
-                <Bike
-                  size={24}
-                  color={type === 'ride' ? '#ffffff' : '#2563eb'}
-                />
+                <Bike size={24} color={type === 'ride' ? '#ffffff' : '#2563eb'} />
                 <Text
                   className={`mt-2 font-semibold ${
                     type === 'ride' ? 'text-white' : 'text-gray-700'
@@ -93,16 +96,11 @@ export default function Upload() {
 
             <TouchableOpacity
               className={`ml-2 flex-1 rounded-lg border py-4 ${
-                type === 'run'
-                  ? 'border-blue-600 bg-blue-600'
-                  : 'border-gray-200 bg-white'
+                type === 'run' ? 'border-blue-600 bg-blue-600' : 'border-gray-200 bg-white'
               }`}
               onPress={() => setType('run')}>
               <View className="items-center">
-                <Footprints
-                  size={24}
-                  color={type === 'run' ? '#ffffff' : '#2563eb'}
-                />
+                <Footprints size={24} color={type === 'run' ? '#ffffff' : '#2563eb'} />
                 <Text
                   className={`mt-2 font-semibold ${
                     type === 'run' ? 'text-white' : 'text-gray-700'
@@ -137,7 +135,7 @@ export default function Upload() {
             <FileText size={16} color="#6b7280" />
             <Text className="ml-2 text-xs text-gray-500">Supported formats</Text>
           </View>
-          <Text className="mt-1 text-sm font-semibold text-gray-700">GPX, FIT, TCX</Text>
+          <Text className="mt-1 text-sm font-semibold text-gray-700">GPX, FIT</Text>
         </View>
       </View>
     </View>

@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from 'store/authStore';
 import { getUserStatistics } from 'api/supabase';
 import { useActivityStore } from 'store/activityStore';
+import Stat from 'components/profile/stat';
 
 export type StatsType = {
   total_activities: number;
@@ -93,48 +94,40 @@ export default function Profile() {
           <View className="mb-3 rounded-lg border border-gray-200 bg-white p-4">
             {/* First Row */}
             <View className="mb-4 flex-row justify-between">
-              <View className="flex-1 items-center">
-                <TrendingUp size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Activities</Text>
-                <Text className="mt-1 font-semibold text-gray-900">
-                  {statsData.total_activities}
-                </Text>
-              </View>
-              <View className="flex-1 items-center">
-                <MapPin size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Distance</Text>
-                <Text className="mt-1 font-semibold text-gray-900">
-                  {formatDistance(statsData.total_distance)} km
-                </Text>
-              </View>
-              <View className="flex-1 items-center">
-                <Clock size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Duration</Text>
-                <Text className="mt-1 font-semibold text-gray-900">
-                  {formatDuration(statsData.total_duration)}
-                </Text>
-              </View>
+              <Stat
+                icon={<TrendingUp size={20} color="#2563eb" />}
+                text={'Activities'}
+                value={statsData.total_activities.toString()}
+              />
+              <Stat
+                icon={<MapPin size={20} color="#2563eb" />}
+                text={'Distance'}
+                value={`${formatDistance(statsData.total_distance)} km`}
+              />
+              <Stat
+                icon={<Clock size={20} color="#2563eb" />}
+                text={'Duration'}
+                value={`${formatDuration(statsData.total_duration)}`}
+              />
             </View>
 
             {/* Second Row */}
             <View className="flex-row justify-between">
-              <View className="flex-1 items-center">
-                <Mountain size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Elevation</Text>
-                <Text className="mt-1 font-semibold text-gray-900">
-                  {Math.round(statsData.total_elevation)}m
-                </Text>
-              </View>
-              <View className="flex-1 items-center">
-                <Bike size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Rides</Text>
-                <Text className="mt-1 font-semibold text-gray-900">{statsData.total_rides}</Text>
-              </View>
-              <View className="flex-1 items-center">
-                <Footprints size={20} color="#2563eb" />
-                <Text className="mt-1 text-xs text-gray-500">Runs</Text>
-                <Text className="mt-1 font-semibold text-gray-900">{statsData.total_runs}</Text>
-              </View>
+              <Stat
+                icon={<Mountain size={20} color="#2563eb" />}
+                text={'Elevation'}
+                value={`${Math.round(statsData.total_elevation)} m`}
+              />
+              <Stat
+                icon={<Bike size={20} color="#2563eb" />}
+                text={'Rides'}
+                value={`${statsData.total_rides}`}
+              />
+              <Stat
+                icon={<Footprints size={20} color="#2563eb" />}
+                text={'Runs'}
+                value={`${statsData.total_runs}`}
+              />
             </View>
           </View>
 

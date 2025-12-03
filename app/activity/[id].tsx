@@ -16,6 +16,7 @@ import Chip from 'components/chip';
 import Stat from 'components/activity/stat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDate } from 'components/activity/renderActivity';
+import MapView, { Polyline, Marker } from 'react-native-maps';
 
 export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +112,64 @@ export default function ActivityDetail() {
   const screenWidth = Dimensions.get('window').width;
   const chartData = getChartData();
   const chartColor = getChartColor();
+
+  const getMapRegion = () => {
+    if (!activityData || activityData.length === 0) {
+      return {
+        latitude: 0,
+        longitude: 0,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+
+    const validPoints = activityData.filter(
+      (point) => point.latitude !== 0 && point.longitude !== 0
+    );
+
+    if (validPoints.length === 0) {
+      return {
+        latitude: 0,
+        longitude: 0,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+
+    const latitudes = validPoints.map((p) => p.latitude);
+    const longitudes = validPoints.map((p) => p.longitude);
+
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    const latDelta = (maxLat - minLat) * 1.3;
+    const lngDelta = (maxLng - minLng) * 1.3;
+
+    return {
+      latitude: centerLat,
+      longitude: centerLng,
+      latitudeDelta: Math.max(latDelta, 0.01),
+      longitudeDelta: Math.max(lngDelta, 0.01),
+    };
+  };
+
+  const getRouteCoordinates = () => {
+    if (!activityData || activityData.length === 0) return [];
+
+    return activityData
+      .filter((point) => point.latitude !== 0 && point.longitude !== 0)
+      .map((point) => ({
+        latitude: point.latitude,
+        longitude: point.longitude,
+      }));
+  };
+
+  const mapRegion = getMapRegion();
+  const routeCoordinates = getRouteCoordinates();
 
   return (
     <ScrollView
@@ -225,6 +284,44 @@ export default function ActivityDetail() {
             )}
           </>
         </View>
+        {isLoading ? (
+          <View className="mb-8 h-[300px] items-center justify-center rounded-lg bg-gray-50">
+            <ActivityIndicator size="large" color="#2563eb" />
+            <Text className="mt-4 text-gray-500">Loading map...</Text>
+          </View>
+        ) : routeCoordinates.length > 0 ? (
+          <View className="mb-8">
+            <Text className="mb-3 text-lg font-semibold">Route Map</Text>
+            <View className="overflow-hidden rounded-lg">
+              <MapView
+                style={{ width: screenWidth - 48, height: 300 }}
+                region={mapRegion}
+                scrollEnabled={true}
+                zoomEnabled={true}
+                pitchEnabled={false}
+                rotateEnabled={false}>
+                <Polyline coordinates={routeCoordinates} strokeColor="#2563eb" strokeWidth={4} />
+
+                {routeCoordinates.length > 0 && (
+                  <>
+                    <Marker
+                      coordinate={routeCoordinates[0]}
+                      pinColor="green"
+                      title="Start"
+                      description="Activity start point"
+                    />
+                    <Marker
+                      coordinate={routeCoordinates[routeCoordinates.length - 1]}
+                      pinColor="red"
+                      title="End"
+                      description="Activity end point"
+                    />
+                  </>
+                )}
+              </MapView>
+            </View>
+          </View>
+        ) : null}
 
         <View className="mt-4 rounded-lg bg-gray-50 p-4">
           <Text className="mb-2 font-medium text-gray-700">File Info</Text>
