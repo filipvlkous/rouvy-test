@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { useActivityStore } from '../../store/activityStore';
-import { useRouter } from 'expo-router';
 import { Activity } from '../../utils/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RenderActivity from 'components/activity/renderActivity';

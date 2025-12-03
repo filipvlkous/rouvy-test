@@ -17,6 +17,7 @@ import Stat from 'components/activity/stat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDate } from 'components/activity/renderActivity';
 import MapView, { Polyline, Marker } from 'react-native-maps';
+import { Gauge, HeartPulse, Mountain, Zap } from 'lucide-react-native';
 
 export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
@@ -102,11 +103,11 @@ export default function ActivityDetail() {
     }
   };
 
-  const chartButtons: { type: ChartType; label: string }[] = [
-    { type: 'speed', label: 'Speed' },
-    { type: 'heart_rate', label: 'HR' },
-    { type: 'elevation', label: 'Elevation' },
-    { type: 'power', label: 'Power' },
+  const chartButtons: { type: ChartType; label: string; icon: React.ComponentType<{ size?: number; color?: string }> }[] = [
+    { type: 'speed', label: 'Speed', icon: Gauge },
+    { type: 'heart_rate', label: 'HR', icon: HeartPulse },
+    { type: 'elevation', label: 'Elevation', icon: Mountain },
+    { type: 'power', label: 'Power', icon: Zap },
   ];
 
   const screenWidth = Dimensions.get('window').width;
@@ -201,23 +202,28 @@ export default function ActivityDetail() {
 
           <>
             <View className="mb-4 flex-row justify-between">
-              {chartButtons.map((button) => (
-                <TouchableOpacity
-                  key={button.type}
-                  className={`mx-1 flex-1 rounded-lg border py-2 ${
-                    chartType === button.type
-                      ? 'border-blue-600 bg-blue-600'
-                      : 'border-gray-300 bg-white'
-                  }`}
-                  onPress={() => onChartTypeChange(button.type)}>
-                  <Text
-                    className={`text-center text-sm font-medium ${
-                      chartType === button.type ? 'text-white' : 'text-gray-700'
-                    }`}>
-                    {button.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {chartButtons.map((button) => {
+                const Icon = button.icon;
+                const isSelected = chartType === button.type;
+                return (
+                  <TouchableOpacity
+                    key={button.type}
+                    className={`flex-1 mx-1 flex-row items-center justify-center rounded-lg border py-2 ${
+                      isSelected
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                    onPress={() => onChartTypeChange(button.type)}>
+                    <Icon size={20} color={isSelected ? '#ffffff' : '#374151'} />
+                    <Text
+                      className={`ml-1 text-center text-sm font-medium ${
+                        isSelected ? 'text-white' : 'text-gray-700'
+                      }`}>
+                      {button.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             {isLoading ? (
               <View className="h-[200px] flex-1 items-center justify-center bg-white">

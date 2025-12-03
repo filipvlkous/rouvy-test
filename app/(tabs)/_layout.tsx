@@ -1,6 +1,4 @@
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
-import { TouchableOpacity, Text } from 'react-native';
-import { useAuthStore } from '../../store/authStore';
 
 export default function TabLayout() {
   return (
