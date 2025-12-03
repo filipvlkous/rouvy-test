@@ -1,3 +1,4 @@
+import { StatsType } from 'app/(tabs)/profile';
 import { supabase } from 'utils/supabase';
 import { DataPoint } from 'utils/types';
 
@@ -71,9 +72,16 @@ export async function getActivityData({
   return { data, error };
 }
 
-export async function getUserStatistics({ user_id }: { user_id: string }) {
-  const { data, error } = await supabase.rpc('get_user_activity_stats', {
-    p_user_id: user_id,
-  });
-  return { data, error };
+export async function getUserStatistics({
+  user_id,
+}: {
+  user_id: string;
+}): Promise<{ data: StatsType; error: any }> {
+  const { data, error } = await supabase
+    .rpc('get_user_activity_stats', {
+      p_user_id: user_id,
+    })
+    .single();
+
+  return { data: data as StatsType, error };
 }

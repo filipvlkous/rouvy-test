@@ -1,50 +1,59 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useMemo } from 'react';
-import { Mail, TrendingUp, MapPin, Clock, Mountain, Bike, Footprints, LogOut } from 'lucide-react-native';
+import { useActionState, useEffect, useState } from 'react';
+import {
+  Mail,
+  TrendingUp,
+  MapPin,
+  Clock,
+  Mountain,
+  Bike,
+  Footprints,
+  LogOut,
+} from 'lucide-react-native';
 
 import { useAuthStore } from 'store/authStore';
+import { getUserStatistics } from 'api/supabase';
 import { useActivityStore } from 'store/activityStore';
 
+export type StatsType = {
+  total_activities: number;
+  total_distance: number;
+  total_duration: number;
+  total_elevation: number;
+  total_rides: number;
+  total_runs: number;
+};
+
+const initData = {
+  total_activities: 0,
+  total_distance: 0,
+  total_duration: 0,
+  total_elevation: 0,
+  total_rides: 0,
+  total_runs: 0,
+};
+
 export default function Profile() {
+  const [statsData, setStatsData] = useState<StatsType>(initData);
   const { signOut, user } = useAuthStore();
-  const { activities, loading, fetchActivities } = useActivityStore();
+  const { activities } = useActivityStore();
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    fetchActivities();
-  }, []);
+  const getData = async () => {
+    if (user?.id) {
+      const { data, error } = await getUserStatistics({ user_id: user?.id });
 
-  const stats = useMemo(() => {
-    if (!activities.length) {
-      return {
-        totalActivities: 0,
-        totalDistance: 0,
-        totalDuration: 0,
-        totalElevation: 0,
-        totalRides: 0,
-        totalRuns: 0,
-      };
-    }
-
-    return activities.reduce(
-      (acc, activity) => ({
-        totalActivities: acc.totalActivities + 1,
-        totalDistance: acc.totalDistance + (activity.distance || 0),
-        totalDuration: acc.totalDuration + (activity.duration || 0),
-        totalElevation: acc.totalElevation + (activity.elevation_gain || 0),
-        totalRides: acc.totalRides + (activity.type === 'ride' ? 1 : 0),
-        totalRuns: acc.totalRuns + (activity.type === 'run' ? 1 : 0),
-      }),
-      {
-        totalActivities: 0,
-        totalDistance: 0,
-        totalDuration: 0,
-        totalElevation: 0,
-        totalRides: 0,
-        totalRuns: 0,
+      if (!error && data) {
+        setStatsData(data);
+      } else {
+        setStatsData(initData);
       }
-    );
+    }
+  };
+
+  useEffect(() => {
+    getData();
   }, [activities]);
 
   const handleSignOut = async () => {
@@ -60,14 +69,6 @@ export default function Profile() {
     const minutes = Math.floor((seconds % 3600) / 60);
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
-
-  if (loading && activities.length === 0) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
-  }
 
   return (
     <View
@@ -95,20 +96,22 @@ export default function Profile() {
               <View className="flex-1 items-center">
                 <TrendingUp size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Activities</Text>
-                <Text className="mt-1 font-semibold text-gray-900">{stats.totalActivities}</Text>
+                <Text className="mt-1 font-semibold text-gray-900">
+                  {statsData.total_activities}
+                </Text>
               </View>
               <View className="flex-1 items-center">
                 <MapPin size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Distance</Text>
                 <Text className="mt-1 font-semibold text-gray-900">
-                  {formatDistance(stats.totalDistance)} km
+                  {formatDistance(statsData.total_distance)} km
                 </Text>
               </View>
               <View className="flex-1 items-center">
                 <Clock size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Duration</Text>
                 <Text className="mt-1 font-semibold text-gray-900">
-                  {formatDuration(stats.totalDuration)}
+                  {formatDuration(statsData.total_duration)}
                 </Text>
               </View>
             </View>
@@ -119,18 +122,18 @@ export default function Profile() {
                 <Mountain size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Elevation</Text>
                 <Text className="mt-1 font-semibold text-gray-900">
-                  {Math.round(stats.totalElevation)}m
+                  {Math.round(statsData.total_elevation)}m
                 </Text>
               </View>
               <View className="flex-1 items-center">
                 <Bike size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Rides</Text>
-                <Text className="mt-1 font-semibold text-gray-900">{stats.totalRides}</Text>
+                <Text className="mt-1 font-semibold text-gray-900">{statsData.total_rides}</Text>
               </View>
               <View className="flex-1 items-center">
                 <Footprints size={20} color="#2563eb" />
                 <Text className="mt-1 text-xs text-gray-500">Runs</Text>
-                <Text className="mt-1 font-semibold text-gray-900">{stats.totalRuns}</Text>
+                <Text className="mt-1 font-semibold text-gray-900">{statsData.total_runs}</Text>
               </View>
             </View>
           </View>
