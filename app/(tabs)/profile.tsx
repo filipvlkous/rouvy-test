@@ -1,6 +1,13 @@
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Mail,
   TrendingUp,
@@ -10,6 +17,7 @@ import {
   Bike,
   Footprints,
   LogOut,
+  AlertCircle,
 } from 'lucide-react-native';
 
 import { useAuthStore } from 'store/authStore';
@@ -37,19 +45,35 @@ const initData = {
 
 export default function Profile() {
   const [statsData, setStatsData] = useState<StatsType>(initData);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { signOut, user } = useAuthStore();
   const { activities } = useActivityStore();
   const insets = useSafeAreaInsets();
 
   const getData = async () => {
     if (user?.id) {
-      const { data, error } = await getUserStatistics({ user_id: user?.id });
+      try {
+        setLoading(true);
+        setError(null);
+        const { data, error } = await getUserStatistics({ user_id: user?.id });
 
-      if (!error && data) {
-        setStatsData(data);
-      } else {
+        if (!error && data) {
+          setStatsData(data);
+        } else {
+          setStatsData(initData);
+          if (error) {
+            setError(error.message || 'Failed to load statistics');
+          }
+        }
+      } catch (err) {
+        setError('An unexpected error occurred');
         setStatsData(initData);
+      } finally {
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
   };
 
@@ -81,7 +105,6 @@ export default function Profile() {
         </View>
 
         <View className="px-6">
-          {/* User Info */}
           <View className="mb-3 rounded-lg border border-gray-200 bg-white p-4">
             <View className="mb-2 flex-row items-center">
               <Mail size={16} color="#6b7280" />
@@ -90,48 +113,75 @@ export default function Profile() {
             <Text className="font-semibold text-gray-900">{user?.email}</Text>
           </View>
 
-          {/* Stats Overview */}
-          <View className="mb-3 rounded-lg border border-gray-200 bg-white p-4">
-            {/* First Row */}
-            <View className="mb-4 flex-row justify-between">
-              <Stat
-                icon={<TrendingUp size={20} color="#2563eb" />}
-                text={'Activities'}
-                value={statsData.total_activities.toString()}
-              />
-              <Stat
-                icon={<MapPin size={20} color="#2563eb" />}
-                text={'Distance'}
-                value={`${formatDistance(statsData.total_distance)} km`}
-              />
-              <Stat
-                icon={<Clock size={20} color="#2563eb" />}
-                text={'Duration'}
-                value={`${formatDuration(statsData.total_duration)}`}
-              />
+          {error && (
+            <View className="mb-3 rounded-lg border border-red-200 bg-red-50 p-4">
+              <View className="mb-3 flex-row items-start">
+                <View className="rounded-full bg-red-100 p-2">
+                  <AlertCircle size={20} color="#dc2626" />
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="mb-1 font-semibold text-red-900">Failed to load statistics</Text>
+                  <Text className="text-sm text-red-600">{error}</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                className="flex-row items-center justify-center rounded-lg bg-red-600 px-4 py-2.5"
+                onPress={() => {
+                  setError(null);
+                  getData();
+                }}>
+                <Text className="font-semibold text-white">Retry</Text>
+              </TouchableOpacity>
             </View>
+          )}
 
-            {/* Second Row */}
-            <View className="flex-row justify-between">
-              <Stat
-                icon={<Mountain size={20} color="#2563eb" />}
-                text={'Elevation'}
-                value={`${Math.round(statsData.total_elevation)} m`}
-              />
-              <Stat
-                icon={<Bike size={20} color="#2563eb" />}
-                text={'Rides'}
-                value={`${statsData.total_rides}`}
-              />
-              <Stat
-                icon={<Footprints size={20} color="#2563eb" />}
-                text={'Runs'}
-                value={`${statsData.total_runs}`}
-              />
+          {loading ? (
+            <View className="mb-3 rounded-lg border border-gray-200 bg-white p-8">
+              <View className="items-center">
+                <ActivityIndicator size="large" color="#2563eb" />
+                <Text className="mt-4 text-sm text-gray-500">Loading your statistics...</Text>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View className="mb-3 rounded-lg border border-gray-200 bg-white p-4">
+              <View className="mb-4 flex-row justify-between">
+                <Stat
+                  icon={<TrendingUp size={20} color="#2563eb" />}
+                  text={'Activities'}
+                  value={statsData.total_activities.toString()}
+                />
+                <Stat
+                  icon={<MapPin size={20} color="#2563eb" />}
+                  text={'Distance'}
+                  value={`${formatDistance(statsData.total_distance)} km`}
+                />
+                <Stat
+                  icon={<Clock size={20} color="#2563eb" />}
+                  text={'Duration'}
+                  value={`${formatDuration(statsData.total_duration)}`}
+                />
+              </View>
 
-          {/* Sign Out Button */}
+              <View className="flex-row justify-between">
+                <Stat
+                  icon={<Mountain size={20} color="#2563eb" />}
+                  text={'Elevation'}
+                  value={`${Math.round(statsData.total_elevation)} m`}
+                />
+                <Stat
+                  icon={<Bike size={20} color="#2563eb" />}
+                  text={'Rides'}
+                  value={`${statsData.total_rides}`}
+                />
+                <Stat
+                  icon={<Footprints size={20} color="#2563eb" />}
+                  text={'Runs'}
+                  value={`${statsData.total_runs}`}
+                />
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity
             className="mb-4 flex-row items-center justify-center rounded-lg bg-red-600 py-4"
             onPress={handleSignOut}>

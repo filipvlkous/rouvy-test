@@ -1,6 +1,6 @@
 import { StatsType } from 'app/(tabs)/profile';
 import { supabase } from 'utils/supabase';
-import { DataPoint } from 'utils/types';
+import { DataPoint } from 'types/types';
 
 type postActionsProps = {
   user_id: string;

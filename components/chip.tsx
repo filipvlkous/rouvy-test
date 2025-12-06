@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { ActivityType } from 'utils/types';
+import { ActivityType } from 'types/types';
 import { Bike, Footprints } from 'lucide-react-native';
 
 type ChipProps = {

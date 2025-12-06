@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useActivityStore } from '../../store/activityStore';
 import { getActivityData } from 'api/supabase';
-import { ChartType, DataPoint } from 'utils/types';
+import { ChartType, DataPoint } from 'types/types';
 import { LineChart } from 'react-native-gifted-charts';
 import Chip from 'components/chip';
 import Stat from 'components/activity/stat';
@@ -18,18 +18,37 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDate } from 'components/activity/renderActivity';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import { Gauge, HeartPulse, Mountain, Zap } from 'lucide-react-native';
+import {
+  getChartColor,
+  getChartData,
+  getChartLabel,
+  getMapRegion,
+  getRouteCoordinates,
+} from 'services/id';
+import NotFound from 'components/activity/notFound';
+
+const chartButtons: {
+  type: ChartType;
+  label: string;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+}[] = [
+  { type: 'speed', label: 'Speed', icon: Gauge },
+  { type: 'heart_rate', label: 'HR', icon: HeartPulse },
+  { type: 'elevation', label: 'Elevation', icon: Mountain },
+  { type: 'power', label: 'Power', icon: Zap },
+];
 
 export default function ActivityDetail() {
   const [isLoading, setIsLoading] = useState(false);
   const [activityData, setActivityData] = useState<DataPoint[]>([]);
   const [chartType, setChartType] = useState<ChartType>('speed');
   const [selectedValue, setSelectedValue] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const { getActivityById } = useActivityStore();
   const activity = getActivityById(id as string);
-  if (!activity) return;
   const router = useRouter();
 
   const onChartTypeChange = (chartType: ChartType) => {
@@ -38,13 +57,24 @@ export default function ActivityDetail() {
   };
 
   const getActivityDataId = async () => {
+    if (!activity?.id) {
+      setError('Activity ID is missing');
+      return;
+    }
+
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await getActivityData({ activity_id: activity?.id });
-      if (!error && data) {
+      const { data, error: fetchError } = await getActivityData({ activity_id: activity.id });
+      if (fetchError) {
+        setError(`Failed to load activity data: ${fetchError.message || 'Unknown error'}`);
+      } else if (data) {
         setActivityData(data);
+      } else {
+        setError('No activity data available');
       }
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load activity data');
     } finally {
       setIsLoading(false);
     }
@@ -55,122 +85,14 @@ export default function ActivityDetail() {
   }, [id]);
 
   if (!activity) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text className="text-gray-500">Activity not found</Text>
-      </View>
-    );
+    return <NotFound />;
   }
 
-  const getChartData = () => {
-    if (!activityData || activityData.length === 0) {
-      return [{ value: 0 }];
-    }
-
-    const maxPoints = 100;
-    const step = Math.max(1, Math.floor(activityData.length / maxPoints));
-
-    return activityData
-      .filter((_, index) => index % step === 0)
-      .map((point) => ({
-        value: Number(point[chartType]) || 0,
-      }));
-  };
-
-  const getChartLabel = () => {
-    switch (chartType) {
-      case 'speed':
-        return 'Speed (km/h)';
-      case 'heart_rate':
-        return 'Heart Rate (bpm)';
-      case 'elevation':
-        return 'Elevation (m)';
-      case 'power':
-        return 'Power (W)';
-    }
-  };
-
-  const getChartColor = () => {
-    switch (chartType) {
-      case 'speed':
-        return '#2563eb';
-      case 'heart_rate':
-        return '#dc2626';
-      case 'elevation':
-        return '#16a34a';
-      case 'power':
-        return '#9333ea';
-    }
-  };
-
-  const chartButtons: { type: ChartType; label: string; icon: React.ComponentType<{ size?: number; color?: string }> }[] = [
-    { type: 'speed', label: 'Speed', icon: Gauge },
-    { type: 'heart_rate', label: 'HR', icon: HeartPulse },
-    { type: 'elevation', label: 'Elevation', icon: Mountain },
-    { type: 'power', label: 'Power', icon: Zap },
-  ];
-
   const screenWidth = Dimensions.get('window').width;
-  const chartData = getChartData();
-  const chartColor = getChartColor();
-
-  const getMapRegion = () => {
-    if (!activityData || activityData.length === 0) {
-      return {
-        latitude: 0,
-        longitude: 0,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-    }
-
-    const validPoints = activityData.filter(
-      (point) => point.latitude !== 0 && point.longitude !== 0
-    );
-
-    if (validPoints.length === 0) {
-      return {
-        latitude: 0,
-        longitude: 0,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-    }
-
-    const latitudes = validPoints.map((p) => p.latitude);
-    const longitudes = validPoints.map((p) => p.longitude);
-
-    const minLat = Math.min(...latitudes);
-    const maxLat = Math.max(...latitudes);
-    const minLng = Math.min(...longitudes);
-    const maxLng = Math.max(...longitudes);
-
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLng = (minLng + maxLng) / 2;
-    const latDelta = (maxLat - minLat) * 1.3;
-    const lngDelta = (maxLng - minLng) * 1.3;
-
-    return {
-      latitude: centerLat,
-      longitude: centerLng,
-      latitudeDelta: Math.max(latDelta, 0.01),
-      longitudeDelta: Math.max(lngDelta, 0.01),
-    };
-  };
-
-  const getRouteCoordinates = () => {
-    if (!activityData || activityData.length === 0) return [];
-
-    return activityData
-      .filter((point) => point.latitude !== 0 && point.longitude !== 0)
-      .map((point) => ({
-        latitude: point.latitude,
-        longitude: point.longitude,
-      }));
-  };
-
-  const mapRegion = getMapRegion();
-  const routeCoordinates = getRouteCoordinates();
+  const chartData = getChartData(activityData, chartType);
+  const chartColor = getChartColor(chartType);
+  const mapRegion = getMapRegion(activityData);
+  const routeCoordinates = getRouteCoordinates(activityData);
 
   return (
     <ScrollView
@@ -208,10 +130,8 @@ export default function ActivityDetail() {
                 return (
                   <TouchableOpacity
                     key={button.type}
-                    className={`flex-1 mx-1 flex-row items-center justify-center rounded-lg border py-2 ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-gray-300 bg-white'
+                    className={`mx-1 flex-1 flex-row items-center justify-center rounded-lg border py-2 ${
+                      isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
                     }`}
                     onPress={() => onChartTypeChange(button.type)}>
                     <Icon size={20} color={isSelected ? '#ffffff' : '#374151'} />
@@ -230,10 +150,22 @@ export default function ActivityDetail() {
                 <ActivityIndicator size="large" color="#2563eb" />
                 <Text className="mt-4 text-gray-500">Loading activity data...</Text>
               </View>
+            ) : error ? (
+              <View className="h-[200px] flex-1 items-center justify-center rounded-lg bg-red-50 p-4">
+                <Text className="mb-2 text-center font-semibold text-red-900">Error</Text>
+                <Text className="text-center text-sm text-red-700">{error}</Text>
+                <TouchableOpacity
+                  className="mt-4 rounded-lg bg-red-600 px-4 py-2"
+                  onPress={getActivityDataId}>
+                  <Text className="font-medium text-white">Retry</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <View className="rounded-lg bg-gray-50 p-4">
                 <View className="mb-4 flex-row items-center justify-center">
-                  <Text className="text-center font-medium text-gray-700">{getChartLabel()}</Text>
+                  <Text className="text-center font-medium text-gray-700">
+                    {getChartLabel(chartType)}
+                  </Text>
                   {selectedValue !== null && (
                     <Text
                       className="ml-2 rounded-md px-3  text-sm font-bold"
@@ -294,6 +226,11 @@ export default function ActivityDetail() {
           <View className="mb-8 h-[300px] items-center justify-center rounded-lg bg-gray-50">
             <ActivityIndicator size="large" color="#2563eb" />
             <Text className="mt-4 text-gray-500">Loading map...</Text>
+          </View>
+        ) : error ? (
+          <View className="mb-8 h-[300px] items-center justify-center rounded-lg bg-red-50">
+            <Text className="mb-2 text-center font-semibold text-red-900">Cannot load map</Text>
+            <Text className="text-center text-sm text-red-700">Activity data unavailable</Text>
           </View>
         ) : routeCoordinates.length > 0 ? (
           <View className="mb-8">

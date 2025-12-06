@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabase';
-import { User } from '../utils/types';
+import { User } from '../types/types';
 
 interface AuthState {
   user: User | null;

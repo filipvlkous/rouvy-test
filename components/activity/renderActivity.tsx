@@ -3,7 +3,7 @@ import React from 'react';
 import Chip from 'components/chip';
 import { router } from 'expo-router';
 import { formatDistance, formatDuration } from './stat';
-import { Activity } from 'utils/types';
+import { Activity } from 'types/types';
 
 export const formatDate = (dateString: string) => {
   const date = new Date(dateString);

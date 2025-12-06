@@ -1,29 +1,33 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabase';
-import { Activity, DataPoint, ParsedActivity } from '../utils/types';
+import { Activity, DataPoint, ParsedActivity } from '../types/types';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { getAllActions, postActions } from 'api/supabase';
 import { parseGPX } from 'utils/parseGPX';
-import { Toast } from 'toastify-react-native';
 
 interface ActivityState {
   activities: Activity[];
   loading: boolean;
   loadingMore: boolean;
+  uploading: boolean;
+  error: string | null;
   hasMore: boolean;
   page: number;
   pageSize: number;
   fetchActivities: (refresh?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  uploadActivity: (name: string, type: 'ride' | 'run') => Promise<void>;
+  uploadActivity: (name: string, type: 'ride' | 'run') => Promise<boolean>;
   getActivityById: (id: string) => Activity | undefined;
+  clearError: () => void;
 }
 
 export const useActivityStore = create<ActivityState>((set, get) => ({
   activities: [],
   loading: false,
   loadingMore: false,
+  uploading: false,
+  error: null,
   hasMore: true,
   page: 0,
   pageSize: 10,
@@ -47,7 +51,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     const { data, error } = await getAllActions({
       user_id: user.id,
       limit: currentState.pageSize,
-      offset: 0
+      offset: 0,
     });
 
     if (!error && data) {
@@ -55,7 +59,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
         activities: data as Activity[],
         loading: false,
         page: 0,
-        hasMore: data.length === currentState.pageSize
+        hasMore: data.length === currentState.pageSize,
       });
     } else {
       set({ loading: false });
@@ -83,7 +87,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     const { data, error } = await getAllActions({
       user_id: user.id,
       limit: currentState.pageSize,
-      offset
+      offset,
     });
 
     if (!error && data) {
@@ -91,7 +95,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
         activities: [...currentState.activities, ...(data as Activity[])],
         loadingMore: false,
         page: nextPage,
-        hasMore: data.length === currentState.pageSize
+        hasMore: data.length === currentState.pageSize,
       });
     } else {
       set({ loadingMore: false });
@@ -99,60 +103,126 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   },
 
   uploadActivity: async (name: string, type: 'ride' | 'run') => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['application/gpx+xml', 'application/octet-stream', '*/*'],
-    });
+    try {
+      set({ uploading: true, error: null });
 
-    if (result.canceled) return;
-
-    const file = result.assets[0];
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const fileContent = await FileSystem.readAsStringAsync(file.uri);
-    const filePath = `${user.id}/${Date.now()}_${file.name}`;
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('activity-files')
-      .upload(filePath, fileContent, {
-        contentType: file.mimeType || 'application/octet-stream',
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/gpx+xml', 'application/octet-stream', '*/*'],
       });
 
-    if (uploadError) throw uploadError;
+      if (result.canceled) {
+        set({ uploading: false });
+        return false;
+      }
 
-    const parsedData = parseActivityFile(fileContent, file.name);
+      const file = result.assets[0];
 
-    const { data: activityData, error: activityError } = await postActions({
-      user_id: user.id,
-      title: name,
-      type,
-      file_name: uploadData.id,
-      file_url: uploadData.fullPath,
-      distance: parsedData.distance,
-      duration: Math.round(parsedData.duration),
-      elevation_gain: parsedData.elevationGain,
-    });
+      if (!file) {
+        set({ uploading: false, error: 'No file selected' });
+        return false;
+      }
 
-    if (activityError) throw activityError;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const dataPointsWithActivityId = parsedData.dataPoints.map((dataPoint: DataPoint) => ({
-      ...dataPoint,
-      activity_id: activityData?.id,
-      timestamp: dataPoint.timestamp / 1000,
-    }));
+      if (!user) {
+        set({ uploading: false, error: 'You must be logged in to upload activities' });
+        return false;
+      }
 
-    const { error } = await supabase
-      .from('activity_data')
-      .insert(dataPointsWithActivityId)
-      .select();
+      let fileContent: string;
+      try {
+        fileContent = await FileSystem.readAsStringAsync(file.uri);
+      } catch (error) {
+        set({ uploading: false, error: 'Failed to read file. Please try again.' });
+        return false;
+      }
 
-    await get().fetchActivities();
+      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('activity-files')
+        .upload(filePath, fileContent, {
+          contentType: file.mimeType || 'application/octet-stream',
+        });
+
+      if (uploadError) {
+        set({ uploading: false, error: `Failed to upload file: ${uploadError.message}` });
+        return false;
+      }
+
+      if (!uploadData) {
+        set({ uploading: false, error: 'Upload failed. Please try again.' });
+        return false;
+      }
+
+      let parsedData: ParsedActivity;
+      try {
+        parsedData = parseActivityFile(fileContent, file.name);
+
+        if (!parsedData.dataPoints || parsedData.dataPoints.length === 0) {
+          set({ uploading: false, error: 'Invalid file format. No activity data found.' });
+          return false;
+        }
+      } catch (error) {
+        set({ uploading: false, error: 'Failed to parse activity file. Please check the file format.' });
+        return false;
+      }
+
+      const { data: activityData, error: activityError } = await postActions({
+        user_id: user.id,
+        title: name,
+        type,
+        file_name: uploadData.id,
+        file_url: uploadData.fullPath,
+        distance: parsedData.distance,
+        duration: Math.round(parsedData.duration),
+        elevation_gain: parsedData.elevationGain,
+      });
+
+      if (activityError) {
+        set({ uploading: false, error: `Failed to save activity: ${activityError.message}` });
+        return false;
+      }
+
+      if (!activityData?.id) {
+        set({ uploading: false, error: 'Activity created but no ID returned' });
+        return false;
+      }
+
+      const dataPointsWithActivityId = parsedData.dataPoints.map((dataPoint: DataPoint) => ({
+        ...dataPoint,
+        activity_id: activityData.id,
+        timestamp: dataPoint.timestamp / 1000,
+      }));
+
+      const { error: dataPointsError } = await supabase
+        .from('activity_data')
+        .insert(dataPointsWithActivityId)
+        .select();
+
+      if (dataPointsError) {
+        set({ uploading: false, error: `Activity saved but failed to save data points: ${dataPointsError.message}` });
+        return false;
+      }
+
+      await get().fetchActivities();
+      set({ uploading: false, error: null });
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      set({ uploading: false, error: `Upload failed: ${errorMessage}` });
+      return false;
+    }
   },
 
   getActivityById: (id: string) => {
     return get().activities.find((a) => a.id === id);
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));
 
@@ -161,22 +231,8 @@ function parseActivityFile(content: string, fileName: string): ParsedActivity {
 
   if (extension === 'gpx') {
     return parseGPX(content);
-  } else if (extension === 'fit') {
-    return parseFIT(content);
   }
 
-  return {
-    distance: 0,
-    duration: 0,
-    elevationGain: 0,
-    dataPoints: [],
-  };
-}
-
-function parseFIT(content: string): ParsedActivity {
-  // FIT files are binary and require a specialized parser
-  // For now, return empty data - consider using a library like 'fit-file-parser'
-  console.warn('FIT file parsing not implemented - consider using fit-file-parser library');
   return {
     distance: 0,
     duration: 0,

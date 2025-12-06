@@ -1,0 +1,17 @@
+import { useAuthStore } from 'store/authStore';
+
+const { signOut } = useAuthStore();
+
+export const formatDuration = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+};
+
+export const formatDistance = (meters: number) => {
+  return (meters / 1000).toFixed(2);
+};
+
+export const handleSignOut = async () => {
+  await signOut();
+};

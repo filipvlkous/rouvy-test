@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { useActivityStore } from '../../store/activityStore';
-import { Activity } from '../../utils/types';
+import { Activity } from '../../types/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RenderActivity from 'components/activity/renderActivity';
+import Loading from 'components/index/loading';
+import NotFound from 'components/index/notFound';
 
 export default function Activities() {
   const { activities, loading, loadingMore, hasMore, fetchActivities, loadMore } =
@@ -19,11 +21,7 @@ export default function Activities() {
   );
 
   if (loading && activities.length === 0) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
+    return <Loading />;
   }
 
   return (
@@ -36,12 +34,7 @@ export default function Activities() {
         </View>
 
         {activities.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <Text className="mb-4 text-center text-lg text-gray-500">No activities yet</Text>
-            <Text className="text-center text-gray-400">
-              Upload your first activity to get started!
-            </Text>
-          </View>
+          <NotFound />
         ) : (
           <FlatList
             data={activities}
