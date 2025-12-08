@@ -24,6 +24,8 @@ import { useAuthStore } from 'store/authStore';
 import { getUserStatistics } from 'api/supabase';
 import { useActivityStore } from 'store/activityStore';
 import Stat from 'components/profile/stat';
+import ButtonCustom from 'components/buttonCustom';
+import { formatDistance, formatDuration } from 'services/profile';
 
 export type StatsType = {
   total_activities: number;
@@ -83,16 +85,6 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const formatDistance = (meters: number) => {
-    return (meters / 1000).toFixed(2);
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
   return (
@@ -182,12 +174,13 @@ export default function Profile() {
             </View>
           )}
 
-          <TouchableOpacity
-            className="mb-4 flex-row items-center justify-center rounded-lg bg-red-600 py-4"
-            onPress={handleSignOut}>
-            <LogOut size={18} color="white" />
-            <Text className="ml-2 text-center text-base font-semibold text-white">Sign Out</Text>
-          </TouchableOpacity>
+          <ButtonCustom
+            onPress={handleSignOut}
+            icon={<LogOut size={20} color="white" />}
+            text={'Sign out'}
+            buttonStyle={'bg-red-600'}
+            textStyle={'color-white'}
+          />
         </View>
       </ScrollView>
     </View>

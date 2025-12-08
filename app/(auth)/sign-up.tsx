@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import ButtonCustom from 'components/buttonCustom';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -40,11 +41,11 @@ export default function SignUp() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
-      <Text className="text-3xl font-bold mb-8 text-center">Sign Up</Text>
+    <View className="flex-1 justify-center bg-white px-6">
+      <Text className="mb-8 text-center text-3xl font-bold">Sign Up</Text>
 
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
+        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -53,7 +54,7 @@ export default function SignUp() {
       />
 
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
+        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
@@ -61,30 +62,22 @@ export default function SignUp() {
       />
 
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
+        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Confirm Password"
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
       />
 
-      <TouchableOpacity
-        className="bg-blue-600 rounded-lg py-4 mb-4"
+      <ButtonCustom
         onPress={handleSignUp}
-        disabled={loading}
-      >
-        <Text className="text-white text-center font-semibold text-base">
-          {loading ? 'Creating account...' : 'Sign Up'}
-        </Text>
-      </TouchableOpacity>
+        textStyle="text-center text-base font-semibold text-white"
+        text={'Sign Up'}
+        loading={loading}
+      />
 
-      <TouchableOpacity
-        className="py-3"
-        onPress={() => router.back()}
-      >
-        <Text className="text-blue-600 text-center">
-          Already have an account? Sign In
-        </Text>
+      <TouchableOpacity className="py-3" onPress={() => router.back()}>
+        <Text className="text-center text-blue-600">Already have an account? Sign In</Text>
       </TouchableOpacity>
     </View>
   );

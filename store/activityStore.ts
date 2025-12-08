@@ -11,7 +11,7 @@ interface ActivityState {
   loading: boolean;
   loadingMore: boolean;
   uploading: boolean;
-  error: string | null;
+  error: string;
   hasMore: boolean;
   page: number;
   pageSize: number;
@@ -27,7 +27,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   loading: false,
   loadingMore: false,
   uploading: false,
-  error: null,
+  error: '',
   hasMore: true,
   page: 0,
   pageSize: 10,
@@ -104,7 +104,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
 
   uploadActivity: async (name: string, type: 'ride' | 'run') => {
     try {
-      set({ uploading: true, error: null });
+      set({ uploading: true, error: '' });
 
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/gpx+xml', 'application/octet-stream', '*/*'],
@@ -166,7 +166,10 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
           return false;
         }
       } catch (error) {
-        set({ uploading: false, error: 'Failed to parse activity file. Please check the file format.' });
+        set({
+          uploading: false,
+          error: 'Failed to parse activity file. Please check the file format.',
+        });
         return false;
       }
 
@@ -203,12 +206,15 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
         .select();
 
       if (dataPointsError) {
-        set({ uploading: false, error: `Activity saved but failed to save data points: ${dataPointsError.message}` });
+        set({
+          uploading: false,
+          error: `Activity saved but failed to save data points: ${dataPointsError.message}`,
+        });
         return false;
       }
 
       await get().fetchActivities();
-      set({ uploading: false, error: null });
+      set({ uploading: false, error: '' });
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -222,7 +228,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   },
 
   clearError: () => {
-    set({ error: null });
+    set({ error: '' });
   },
 }));
 

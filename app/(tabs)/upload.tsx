@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
@@ -21,11 +20,11 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { handleUpload } from 'services/upload';
+import ButtonCustom from 'components/buttonCustom';
 
 export default function Upload() {
   const [name, setName] = useState('');
   const [type, setType] = useState<'ride' | 'run'>('ride');
-  const [loading, setLoading] = useState(false);
   const { uploadActivity, uploading, error, clearError } = useActivityStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -108,25 +107,13 @@ export default function Upload() {
               </View>
             </View>
 
-            <TouchableOpacity
-              className={`mb-3 flex-row items-center justify-center rounded-lg py-4 ${
-                uploading || loading ? 'bg-blue-400' : 'bg-blue-600'
-              }`}
-              onPress={() =>
-                handleUpload({ name, type, setLoading, uploadActivity, setName, router })
-              }
-              disabled={uploading || loading}>
-              {uploading || loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <>
-                  <UploadIcon size={18} color="white" />
-                  <Text className="ml-2 text-center text-base font-semibold text-white">
-                    Choose File & Upload
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <ButtonCustom
+              icon={<UploadIcon size={18} color="white" />}
+              onPress={() => handleUpload({ name, type, error, uploadActivity, setName, router })}
+              textStyle="color-white text-base font-semibold ml-2 text-center"
+              text={'Choose File & Upload'}
+              loading={uploading}
+            />
 
             <View className="rounded-lg border border-gray-200 bg-white p-4">
               <View className="flex-row items-center">

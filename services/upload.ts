@@ -4,17 +4,17 @@ import { Router } from 'expo-router';
 interface HandleUploadParams {
   name: string;
   type: 'ride' | 'run';
-  setLoading: (loading: boolean) => void;
   uploadActivity: (name: string, type: 'ride' | 'run') => Promise<boolean>;
   setName: (name: string) => void;
   router: Router;
+  error: string;
 }
 
 export async function handleUpload({
   name,
   type,
-  setLoading,
   uploadActivity,
+  error,
   setName,
   router,
 }: HandleUploadParams) {
@@ -23,21 +23,16 @@ export async function handleUpload({
     return;
   }
 
-  setLoading(true);
-  try {
-    const success = await uploadActivity(name, type);
-    if (success) {
-      setName('');
-      Alert.alert('Success', 'Activity uploaded successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/'),
-        },
-      ]);
-    }
-  } catch (error) {
-    // Error is already handled in the store
-  } finally {
-    setLoading(false);
+  const success = await uploadActivity(name, type);
+  if (success) {
+    setName('');
+    Alert.alert('Success', 'Activity uploaded successfully!', [
+      {
+        text: 'OK',
+        onPress: () => router.push('/'),
+      },
+    ]);
+  } else if (error !== '') {
+    Alert.alert('Upload Failed', error);
   }
 }

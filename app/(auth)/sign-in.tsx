@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import ButtonCustom from 'components/buttonCustom';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -28,11 +29,11 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
-      <Text className="text-3xl font-bold mb-8 text-center">Sign In</Text>
+    <View className="flex-1 justify-center bg-white px-6">
+      <Text className="mb-8 text-center text-3xl font-bold">Sign In</Text>
 
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
+        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -41,30 +42,21 @@ export default function SignIn() {
       />
 
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
+        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <TouchableOpacity
-        className="bg-blue-600 rounded-lg py-4 mb-4"
+      <ButtonCustom
+        loading={loading}
         onPress={handleSignIn}
-        disabled={loading}
-      >
-        <Text className="text-white text-center font-semibold text-base">
-          {loading ? 'Signing in...' : 'Sign In'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="py-3"
-        onPress={() => router.push('/(auth)/sign-up')}
-      >
-        <Text className="text-blue-600 text-center">
-          Don't have an account? Sign Up
-        </Text>
+        text={'Sign In'}
+        textStyle="text-center text-base font-semibold text-white"
+      />
+      <TouchableOpacity className="py-3" onPress={() => router.push('/(auth)/sign-up')}>
+        <Text className="text-center text-blue-600">Don't have an account? Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
