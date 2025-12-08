@@ -45,17 +45,26 @@ export async function getAllActions({
   user_id,
   limit = 10,
   offset = 0,
+  type,
 }: {
   user_id: string;
   limit?: number;
   offset?: number;
+  type?: 'ride' | 'run';
 }) {
-  const { data, error } = await supabase
+  let query = supabase
     .from('activities')
     .select('*')
-    .eq('user_id', user_id)
+    .eq('user_id', user_id);
+
+  if (type) {
+    query = query.eq('type', type);
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
   return { data, error };
 }
 

@@ -13,6 +13,8 @@ export interface Activity {
   created_at: string;
 }
 
+export type FilterType = 'all' | ActivityType;
+
 export interface ActivityDataPoint {
   timestamp: number;
   speed?: number;

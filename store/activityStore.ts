@@ -15,7 +15,8 @@ interface ActivityState {
   hasMore: boolean;
   page: number;
   pageSize: number;
-  fetchActivities: (refresh?: boolean) => Promise<void>;
+  currentFilter?: 'ride' | 'run';
+  fetchActivities: (refresh?: boolean, filter?: 'ride' | 'run') => Promise<void>;
   loadMore: () => Promise<void>;
   uploadActivity: (name: string, type: 'ride' | 'run') => Promise<boolean>;
   getActivityById: (id: string) => Activity | undefined;
@@ -31,13 +32,14 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
   hasMore: true,
   page: 0,
   pageSize: 10,
-  fetchActivities: async (refresh = false) => {
+  currentFilter: undefined,
+  fetchActivities: async (refresh = false, filter?: 'ride' | 'run') => {
     const currentState = get();
 
     if (refresh) {
-      set({ loading: true, page: 0, activities: [], hasMore: true });
+      set({ loading: true, page: 0, activities: [], hasMore: true, currentFilter: filter });
     } else {
-      set({ loading: true });
+      set({ loading: true, currentFilter: filter });
     }
 
     const {
@@ -52,6 +54,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
       user_id: user.id,
       limit: currentState.pageSize,
       offset: 0,
+      type: filter,
     });
 
     if (!error && data) {
@@ -88,6 +91,7 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
       user_id: user.id,
       limit: currentState.pageSize,
       offset,
+      type: currentState.currentFilter,
     });
 
     if (!error && data) {
