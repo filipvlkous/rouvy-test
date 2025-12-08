@@ -114,14 +114,6 @@ export default function Upload() {
               text={'Choose File & Upload'}
               loading={uploading}
             />
-
-            <View className="rounded-lg border border-gray-200 bg-white p-4">
-              <View className="flex-row items-center">
-                <FileText size={16} color="#6b7280" />
-                <Text className="ml-2 text-xs text-gray-500">Supported formats</Text>
-              </View>
-              <Text className="mt-1 text-sm font-semibold text-gray-700">GPX</Text>
-            </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
